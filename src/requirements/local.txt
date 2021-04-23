@@ -1,0 +1,15 @@
+Django>=3.0.8
+djangorestframework==3.11.0
+psycopg2-binary
+django-cors-headers>=3.5.0
+Pillow==7.2.0
+django-health-check==3.12.1
+django-storages==1.10
+django-nested-admin==3.3.2
+requests==2.24.0
+paypal-checkout-serversdk==1.0.1
+django-ses==1.0.3
+django-health-check==3.12.1
+django-json-widget==1.0.1
+pycel==1.0b22
+openpyxl==3.0.6

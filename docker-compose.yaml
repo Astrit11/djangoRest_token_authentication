@@ -1,0 +1,33 @@
+# https://docs.docker.com/compose/compose-file/
+version: "3"
+services:
+    postgres:
+        image: postgres:12.0-alpine
+        environment:
+            PGDATA: /mnt/db_volume/postgres_data
+        ports:
+            - "5432:5432"
+        volumes:
+            - ./db_volume:/mnt/db_volume:delegated
+        env_file:
+            - .env
+    web:
+        build: .
+        container_name: django_auth
+        image: django_auth_rest
+        tty: true
+        command: bash -c "chmod +x ./src/scripts/wait-for-db.sh && ./src/scripts/wait-for-db.sh postgres:5432 && cd ./src && ./manage.py migrate && gunicorn config.wsgi:application --bind :8000"
+        volumes:
+            - .:/usr/src/app/
+            - django-static:/usr/src/app/django-static
+        env_file:
+            - .env
+        ports:
+            - "8000:8000"
+        depends_on:
+            - postgres
+    
+volumes:
+  media:
+  django-static:
+        
