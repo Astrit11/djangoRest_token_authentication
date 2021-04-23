@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'auth_module',
 ]
 
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -106,7 +108,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
+AUTH_USER_MODEL = 'auth_module.Users'
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/
 
@@ -123,5 +125,5 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
-
-STATIC_URL = '/static/'
+STATIC_URL = os.environ.get("DJANGO_STATIC_URL", "/static/")
+STATIC_ROOT = os.environ.get("DJANGO_STATIC_ROOT", "/static/")
