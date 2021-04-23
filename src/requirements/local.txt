@@ -2,7 +2,7 @@ Django>=3.0.8
 djangorestframework==3.11.2
 psycopg2-binary
 django-cors-headers>=3.5.0
-Pillow==7.2.0
+Pillow==8.1.1
 django-health-check==3.12.1
 django-storages==1.10
 django-nested-admin==3.3.2
