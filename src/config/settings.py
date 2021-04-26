@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'auth_module',
+    'authentication',
 ]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -108,7 +108,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-AUTH_USER_MODEL = 'auth_module.Users'
+AUTH_USER_MODEL = 'authentication.Users'
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/
 
