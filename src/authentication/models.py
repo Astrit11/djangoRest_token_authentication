@@ -2,6 +2,13 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import ugettext_lazy as _
 
+
+from django.conf import settings
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from rest_framework.authtoken.models import Token
+
+
 class UserManager(BaseUserManager):
     """Define a model manager for User model with no username field."""
 
@@ -34,10 +41,15 @@ class UserManager(BaseUserManager):
             raise ValueError('Superuser must have is_superuser=True.')
 
         return self._create_user(email, password, **extra_fields)
+    @receiver(post_save, sender=settings.AUTH_USER_MODEL)
+
+    def create_auth_token(sender, instance=None, created=False, **kwargs):
+        if created:
+            token = Token.objects.create(user=instance)
+            return token
 
 class Users(AbstractUser):
     username = None
-    location = models.CharField(max_length=100)
     email = models.EmailField(verbose_name='email address', max_length=100, unique=True)
     email_token = models.CharField(verbose_name='email_token', max_length=300, null=True)
     is_confirmed = models.BooleanField(verbose_name='is_confirmed', null=True)
