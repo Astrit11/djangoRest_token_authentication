@@ -11,7 +11,7 @@ User=get_user_model()
 def get_and_authenticate_user(email, password):
     user = authenticate(email=email, password=password)
     if user is None:
-        raise serializers.ValidationError('Invalid email/password. Please try again!')
+        raise serializers.ValidationError({"error": "Invalid username or password"})
     return user
     
 class UsersSerializer(serializers.ModelSerializer):
@@ -38,7 +38,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         try:
             validate_password(value)
         except ValidationError:
-            raise serializers.ValidationError('Password must contain at least 8 carachters')
+            raise serializers.ValidationError('Password must contain at least 9 carachters')
         return value
 
 class LoginSerializer(serializers.Serializer):
@@ -60,7 +60,7 @@ class PasswordChangeSerializer(serializers.Serializer):
         try:
             validate_password(value)
         except ValidationError:
-            raise serializers.ValidationError('Password must contain at least 8 carachters')
+            raise serializers.ValidationError('Password must contain at least 9 carachters')
         return value
 
 class ResetPasswordEmailRequestSerializer(serializers.Serializer):
@@ -74,7 +74,7 @@ class ResetPasswordEmailRequestSerializer(serializers.Serializer):
         email = attrs.get('email')
         user = User.objects.get(email=email)
         if user is None:
-            raise serializers.ValidationError('A user with this email is not found.')
+            raise serializers.ValidationError({"error":"A user with this email is not found."})
         return user
         
 class EmailConfirmationSerializer(serializers.ModelSerializer):
@@ -97,5 +97,5 @@ class PasswordResetSerializer(serializers.ModelSerializer):
         try:
             validate_password(value)
         except ValidationError:
-            raise serializers.ValidationError('Password must contain at least 8 carachters,letters and numbers')
+            raise serializers.ValidationError('Password must contain at least 9 carachters.')
         return value
