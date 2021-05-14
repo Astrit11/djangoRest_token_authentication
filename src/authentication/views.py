@@ -28,7 +28,6 @@ from .serializers import (
   RegisterSerializer,
   ResetPasswordEmailRequestSerializer,
   EmailConfirmationSerializer,
-  validate_password,
 )
 
 
@@ -37,16 +36,11 @@ from .serializers import (
 from .models import Users
 User=get_user_model()
 
-# Get an instance of a logger
-# logger = logging.getLogger('app_api') #We take the name under the settings.py(loggers)
-
 '''
   A class for registering users
 '''
 class RegisterAPI(APIView):
-    def post(self, request, format='json'):
-        # logger.info({ 'requested_data': request.data, 'class': 'RegisterAPI', 'fn': 'post' })
-        # TODO query first to check if a user exist with this email
+    def post(self, request):
         if 'is_staff' in request.data and request.data['is_staff'] or 'is_superuser' in request.data and  request.data['is_superuser']:
           return JsonResponse({ 'status': False, 'msg': 'Unautorized request', 'data': {} }, status=200)  
         serializer = RegisterSerializer(data=request.data)
@@ -120,7 +114,6 @@ class LogOutAPI(APIView):
   permission_classes = [permissions.IsAuthenticated,]
   def post(self, request):
       try:
-          logger.info({ 'requested_data': request.data, 'class': 'LogOutAPI', 'fn': 'post' })
           request.user.auth_token.delete()
       except (AttributeError):
           return JsonResponse({ 'status': False, 'msg': 'User can not be logged out at the moment', "data": {} }, status=400)
@@ -141,7 +134,6 @@ class ChangePasswordAPI(APIView):
 
     def put(self, request, *args, **kwargs):
       try:
-        # logger.info({ 'requested_data': request.data, 'class': 'ChangePasswordAPI', 'fn': 'put' })
         self.object = self.get_object()
         serializer = PasswordChangeSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
@@ -158,7 +150,6 @@ class ChangePasswordAPI(APIView):
 class RequestPasswordResetEmailAPI(APIView):
   def post(self,request, *args, **kwargs):
     try:
-      logger.info({ 'requested_data': request.data, 'class': 'RequestPasswordResetEmailAPI', 'fn': 'post' })
       serializer = ResetPasswordEmailRequestSerializer(data=request.data)
       if serializer.is_valid(): 
           user = serializer.validated_data
