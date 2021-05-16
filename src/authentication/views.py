@@ -4,7 +4,9 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import JsonResponse
-# from utils.utils import send_email, get_env,send_contact_email
+
+from utils.utils import send_email, get_env
+
 from django.core.mail import send_mail
 
 from django.views.decorators.cache import cache_control
@@ -47,7 +49,8 @@ class RegisterAPI(APIView):
         if serializer.is_valid(raise_exception=True):
             user = serializer.save()
             if user:
-               
+                token = user.email_verification_token = PasswordResetTokenGenerator().make_token(user)
+                send_email(token=token,user=user)
                 data = {
                   'firstName': user.first_name,
                   'lastName': user.last_name,
