@@ -87,15 +87,20 @@ class PasswordResetSerializer(serializers.ModelSerializer):
         model = Users
         fields = ('password',)
 
-    def update(self, instance, validated_data):
-        password = validated_data.get('password', instance.password)
-        instance.set_password(password)
-        instance.save()
-        return instance
+    # def update(self, instance, validated_data):
+    #     password = validated_data.get('password', instance.password)
+    #     instance.set_password(password)
+    #     instance.save()
+    #     return instance
 
-    def validate_password(self, value):
+    def update(self, instance, validated_data):
+        instance.password = validated_data.get('password', instance.password)
+        instance.save()
+        return instance 
+
+    def validate_password(self, password):
         try:
-            validate_password(value)
+            validate_password(password)
         except ValidationError:
             raise serializers.ValidationError('Password must contain at least 9 carachters.')
-        return value
+        return password

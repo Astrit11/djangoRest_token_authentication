@@ -1,17 +1,9 @@
-import logging
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.core.exceptions import ObjectDoesNotExist
 from django.http import JsonResponse
 
-from utils.utils import send_email, get_env
-
-from django.core.mail import send_mail
-
-from django.views.decorators.cache import cache_control
-from django.views.decorators.vary import vary_on_cookie
-from django.utils.decorators import method_decorator
+from utils.utils import confirm_email,get_env,forgot_password
 
 
 from rest_framework import permissions, status
@@ -34,8 +26,6 @@ from .serializers import (
 
 
 
-
-from .models import Users
 User=get_user_model()
 
 '''
@@ -50,7 +40,7 @@ class RegisterAPI(APIView):
             user = serializer.save()
             if user:
                 token = user.email_verification_token = PasswordResetTokenGenerator().make_token(user)
-                send_email(token=token,user=user)
+                confirm_email(token=token,user=user)
                 data = {
                   'firstName': user.first_name,
                   'lastName': user.last_name,
@@ -87,9 +77,8 @@ class ConfirmEmailAPI(APIView):
   A class for login user
 '''
 class LoginAPI(APIView):
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
       try:
-        # logger.info({ 'requested_data': request.data, 'class': 'LoginAPI', 'fn': 'post' })
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             user = get_and_authenticate_user(**serializer.validated_data)
@@ -132,12 +121,9 @@ class ChangePasswordAPI(APIView):
     """
     permission_classes = (permissions.IsAuthenticated, )
 
-    def get_object(self, queryset=None):
-        return self.request.user
-
-    def put(self, request, *args, **kwargs):
+    def put(self, request):
       try:
-        self.object = self.get_object()
+        self.object = self.request.user
         serializer = PasswordChangeSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             old_password = serializer.data.get("old_password")
@@ -147,24 +133,21 @@ class ChangePasswordAPI(APIView):
             self.object.save()
             return JsonResponse({'status':True,'msg':'Succesfully updated password'})
         return JsonResponse({'status':False,'msg':'Can not change password'},status=400)
-      except Clients.DoesNotExist:
+      except User.DoesNotExist:
         return JsonResponse({ 'status': False, 'msg': 'Internal system error', 'data': {}}, status=500)
  
 class RequestPasswordResetEmailAPI(APIView):
-  def post(self,request, *args, **kwargs):
+  def post(self,request):
     try:
       serializer = ResetPasswordEmailRequestSerializer(data=request.data)
       if serializer.is_valid(): 
           user = serializer.validated_data
           user.email_token = PasswordResetTokenGenerator().make_token(user)
-          link = get_env('FRONTEND_URL', 'https://anoriagroup.com') + '/auth/reset/password/' + user.email_token
-          email_body = 'Use this ' + link + ' to reset your password'
-          data = {'email_body':email_body,'to_email':user.email,'email_subject':'Reset your password '}
-          send_email(data)
+          forgot_password(user.email_token,user)
           user.save(update_fields=["email_token"])
-          return JsonResponse({ 'status': True, 'msg': 'We have sent you a link to reset your password!', 'data': user.email_token, }, status=200)
+          return JsonResponse({ 'status': True, 'msg': 'We have sent you a link to reset your password!', 'data': user.email_token}, status=200)
       return JsonResponse({ 'status': False, 'msg': 'No registered user with this email!', 'data': {}}, status=400)
-    except Clients.DoesNotExist:
+    except User.DoesNotExist:
       return JsonResponse({ 'status': False, 'msg': 'Internal system error', 'data': {}}, status=500)
 
 
@@ -172,16 +155,15 @@ class RequestPasswordResetEmailAPI(APIView):
 class SetNewPasswordAPI(APIView):
     def put(self, request, token):
       try:
-        # logger.info({ 'requested_data': request.data, 'class': 'SetNewPasswordAPI', 'fn': 'put' })
-        client = Clients.objects.get(email_token=token)
+        client = User.objects.get(email_token=token)
         if client:
           if PasswordResetTokenGenerator().check_token(client, token):
             serializer = PasswordResetSerializer(client, data=request.data)
-            if serializer.is_valid():
+            if serializer.is_valid(raise_exception=True):
               serializer.save()
-              return JsonResponse({ 'status': True, 'msg': 'Password changed successfully', 'data': {} }, status=200)
+              return JsonResponse({ 'status': True, 'msg': 'Password changed successfully', 'data':{} }, status=200)
             return JsonResponse({ 'status': False, 'msg': 'Could not reset password', 'data': {} }, status=401)
-          return JsonResponse({ 'status': False, 'msg': 'This user does not exist', 'data': {} }, status=401)
+          return JsonResponse({ 'status': False, 'msg': 'Token is not valid', 'data': {} }, status=401)
         return JsonResponse({ 'status': False, 'msg': 'This user does not exist', 'data': {} }, status=401)
-      except Clients.DoesNotExist:
+      except User.DoesNotExist:
         return JsonResponse({ 'status': False, 'msg': 'Internal system error', 'data': {}}, status=500)
