@@ -139,6 +139,7 @@ class ChangePasswordAPI(APIView):
 class RequestPasswordResetEmailAPI(APIView):
   def post(self,request):
     try:
+      self.object = self.request.user
       serializer = ResetPasswordEmailRequestSerializer(data=request.data)
       if serializer.is_valid(): 
           user = serializer.validated_data
@@ -155,12 +156,16 @@ class RequestPasswordResetEmailAPI(APIView):
 class SetNewPasswordAPI(APIView):
     def put(self, request, token):
       try:
+        self.object = self.request.user
         client = User.objects.get(email_token=token)
         if client:
           if PasswordResetTokenGenerator().check_token(client, token):
             serializer = PasswordResetSerializer(client, data=request.data)
             if serializer.is_valid(raise_exception=True):
-              serializer.save()
+              user=serializer.save()
+              user.set_password(serializer.data.get("password"))
+              user.save(update_fields=["password"])
+              # serializer.save()
               return JsonResponse({ 'status': True, 'msg': 'Password changed successfully', 'data':{} }, status=200)
             return JsonResponse({ 'status': False, 'msg': 'Could not reset password', 'data': {} }, status=401)
           return JsonResponse({ 'status': False, 'msg': 'Token is not valid', 'data': {} }, status=401)

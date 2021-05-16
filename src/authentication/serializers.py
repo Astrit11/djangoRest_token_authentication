@@ -86,18 +86,7 @@ class PasswordResetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Users
         fields = ('password',)
-
-    # def update(self, instance, validated_data):
-    #     password = validated_data.get('password', instance.password)
-    #     instance.set_password(password)
-    #     instance.save()
-    #     return instance
-
-    def update(self, instance, validated_data):
-        instance.password = validated_data.get('password', instance.password)
-        instance.save()
-        return instance 
-
+        
     def validate_password(self, password):
         try:
             validate_password(password)
