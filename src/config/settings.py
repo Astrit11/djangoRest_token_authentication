@@ -49,6 +49,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
+        'authentication.token_expiration.ExpiringTokenAuthentication',
+
     ],
 }
 
@@ -61,6 +63,10 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+
+TOKEN_EXPIRED_AFTER_SECONDS = 20
+
 
 ROOT_URLCONF = 'config.urls'
 
