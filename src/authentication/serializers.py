@@ -1,25 +1,17 @@
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.hashers import make_password
-from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth import password_validation
+
 from django.core.exceptions import ValidationError
 from rest_framework import serializers
 
 from .models import Users
 
+
 User=get_user_model()
 
-def get_and_authenticate_user(email, password):
-    user = authenticate(email=email, password=password)
-    if user is None:
-        raise serializers.ValidationError({"error": "Invalid username or password"})
-    return user
-    
-class UsersSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Users
-        fields = ('id', 'first_name', 'last_name','email', 'is_confirmed',)
 
-        
+
 class RegisterSerializer(serializers.ModelSerializer):
     """
     Serializer for registering users endpoint.
@@ -33,13 +25,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         validated_data['password'] = make_password(validated_data['password'])
         client = Users.objects.create(**validated_data)
         return client
-    
-    def validate_password(self, value):
-        try:
-            validate_password(value)
-        except ValidationError:
-            raise serializers.ValidationError('Password must contain at least 9 carachters')
-        return value
 
 class LoginSerializer(serializers.Serializer):
     """
@@ -56,12 +41,6 @@ class PasswordChangeSerializer(serializers.Serializer):
     old_password = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True)
 
-    def validate_password(self, value):
-        try:
-            validate_password(value)
-        except ValidationError:
-            raise serializers.ValidationError('Password must contain at least 9 carachters')
-        return value
 
 class ResetPasswordEmailRequestSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
@@ -76,20 +55,29 @@ class ResetPasswordEmailRequestSerializer(serializers.Serializer):
         if user is None:
             raise serializers.ValidationError({"error":"A user with this email is not found."})
         return user
-        
+
+
 class EmailConfirmationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('email_verification_token',)
 
+
 class PasswordResetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Users
         fields = ('password',)
-        
-    def validate_password(self, password):
-        try:
-            validate_password(password)
-        except ValidationError:
-            raise serializers.ValidationError('Password must contain at least 9 carachters.')
-        return password
+
+
+def get_and_authenticate_user(email, password):
+    user = authenticate(email=email, password=password)
+    if user is None:
+        raise serializers.ValidationError({"error": "Invalid username or password"})
+    return user
+    
+def validate_password(value):
+    try:
+        password_validation.validate_password(value)
+    except ValidationError as error:
+        raise serializers.ValidationError({'error':'Password must contain at least 8 charachters'})
+    return value
