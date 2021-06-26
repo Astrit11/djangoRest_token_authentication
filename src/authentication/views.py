@@ -4,6 +4,8 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.http import JsonResponse
 
 from utils.utils import confirm_email, forgot_password
+from .token_expiration import token_expire_handler, expires_in      
+from rest_framework.authtoken.models import Token
 
 
 from rest_framework import permissions
@@ -40,13 +42,13 @@ class RegisterAPI(APIView):
             user = serializer.save()
             if user:
                 token = user.email_verification_token = PasswordResetTokenGenerator().make_token(user)
-                confirm_email(token=token, user=user)
+                # confirm_email(token=token, user=user)
                 data = {
                     'firstName': user.first_name,
                     'lastName': user.last_name,
                     'token': user.auth_token.key,
                     'email': user.email,
-                    'email_verification_token': user.email_verification_token
+                    'email_verification_token': user.email_verification_token,
                 }
                 user.save(update_fields=["email_verification_token"])
                 return JsonResponse({'status': True, 'msg': 'Succesfully created user', 'data': data}, status=200)
@@ -86,13 +88,16 @@ class LoginAPI(APIView):
             if serializer.is_valid(raise_exception=True):
                 user = get_and_authenticate_user(**serializer.validated_data)
                 if user:
+                    token, _ = Token.objects.get_or_create(user = user)
+                    is_expired, token = token_expire_handler(token)
                     data = {
                         'userId': user.pk,
                         'firstName': user.first_name,
                         'lastName': user.last_name,
                         'email': user.email,
-                        'token': user.auth_token.key,
-                    }
+                        'token': token.key,
+                        'expires_in': expires_in(token),
+                    }   
                     return JsonResponse({'status': True, 'msg': 'Succesfully logged in user', 'data': data}, status=200)
             return JsonResponse({'status': False, 'msg': 'You must confirm youre email address in order to continue ', 'data': {}}, status=200)
         except Users.DoesNotExist:
